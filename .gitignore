@@ -1,0 +1,20 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+dist/
+build/
+
+# generated audio and settings
+output/
+*.wav
+*.mp3
+*.flac
+
+# local model caches
+.cache/
+*.safetensors
+*.ckpt
+*.bin
