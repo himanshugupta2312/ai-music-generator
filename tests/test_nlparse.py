@@ -40,6 +40,12 @@ def test_tuning_and_genres():
     assert parse_prompt("something at 9000 hz").tuning_hz == 440  # implausible, ignored
 
 
+def test_guitar_not_forced_acoustic():
+    s = parse_prompt("punk rock with distorted guitars and fast drums")
+    assert "acoustic" not in s.style_prompt
+    assert "acoustic guitar" in parse_prompt("soft acoustic songs").style_prompt
+
+
 def test_retune_shifts_pitch():
     from aimusic.tuning import retune
     sr = 32000

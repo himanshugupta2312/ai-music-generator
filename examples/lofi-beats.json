@@ -1,0 +1,13 @@
+{
+  "style_prompt": "lo-fi, mellow, vinyl crackle, hip hop, boom bap drum beat, 808 bass, sampled loops, 85 bpm",
+  "lyrics": "[instrumental]",
+  "duration": 20.0,
+  "tempo": 85,
+  "seed": 8,
+  "tuning_hz": 440.0,
+  "soundscapes": [],
+  "soundscape_level": 0.35,
+  "original_prompt": "20 sec lofi hip hop beats, mellow, 85 bpm",
+  "backend": "musicgen",
+  "sample_rate": 32000
+}

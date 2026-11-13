@@ -13,6 +13,10 @@ output/
 *.mp3
 *.flac
 
+# ...except the small curated demos checked in under examples/
+!examples/*.mp3
+!examples/*.json
+
 # local model caches
 .cache/
 *.safetensors

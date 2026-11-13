@@ -1,0 +1,13 @@
+{
+  "style_prompt": "punk rock, distorted electric guitars, fast power chords, raw, energetic, guitar",
+  "lyrics": "[instrumental]",
+  "duration": 20.0,
+  "tempo": null,
+  "seed": 5,
+  "tuning_hz": 440.0,
+  "soundscapes": [],
+  "soundscape_level": 0.35,
+  "original_prompt": "20 sec punk rock with distorted guitars and fast drums",
+  "backend": "musicgen",
+  "sample_rate": 32000
+}

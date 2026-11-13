@@ -43,7 +43,8 @@ _MOODS = {
     "hip": ["hip hop", "boom bap drum beat", "808 bass", "sampled loops"],  # "hip hop"/"hip-hop"
     "trap": ["trap", "808 bass", "hi-hat rolls"],
     "piano": ["solo piano"],
-    "guitar": ["acoustic guitar"],
+    "acoustic": ["acoustic guitar", "warm"],
+    "guitar": ["guitar"],  # neutral: don't force "acoustic" onto punk/rock prompts
 }
 
 _SOUNDSCAPES = {
