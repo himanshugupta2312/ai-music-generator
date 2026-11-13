@@ -23,6 +23,9 @@ from .soundscape import mix_soundscapes
 from .tuning import retune
 
 
+MAX_DURATION_S = 600  # 10-minute cap (ACE-Step's documented per-generation maximum)
+
+
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="aimusic",
@@ -92,6 +95,13 @@ def main(argv: list[str] | None = None) -> int:
         s.soundscapes = []
     if args.ambience_level is not None:
         s.soundscape_level = args.ambience_level
+
+    if s.duration > MAX_DURATION_S:
+        print(f"Duration {s.duration:.0f}s is over the {MAX_DURATION_S // 60}-minute limit.", file=sys.stderr)
+        return 2
+    if args.backend == "musicgen" and s.duration > 30:
+        print("[note] MusicGen builds tracks over 30 s from separate chunks, so they will not "
+              "be continuous. Use --backend acestep for one continuous piece.")
 
     _show(s)
     if not args.yes and sys.stdin.isatty():

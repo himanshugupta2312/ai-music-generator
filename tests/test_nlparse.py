@@ -70,3 +70,14 @@ def test_synth_and_rain_pipeline():
     assert np.isfinite(mixed).all()
     assert np.max(np.abs(mixed)) <= 1.0
     assert not np.allclose(mixed, audio)
+
+
+def test_duration_cap_and_acestep_missing(monkeypatch, tmp_path):
+    from aimusic.cli import main
+    from aimusic.backends.acestep import AceStepBackend
+    import pytest
+
+    assert main(["11 min calm piano", "--backend", "synth", "-y"]) == 2  # over the 10-minute cap
+    monkeypatch.setenv("ACESTEP_HOME", str(tmp_path / "nope"))
+    with pytest.raises(RuntimeError, match="ACESTEP_HOME"):
+        AceStepBackend()

@@ -10,9 +10,9 @@ The tool shows how it understood your request, asks for confirmation, generates
 the music, mixes in rain or wind if you asked for it, and saves a `.wav`/`.mp3`
 plus a `.json` file with every setting used.
 
-> **Early-stage project (v0.1).** One neural backend works (MusicGen). Tracks
-> longer than 30 s are not yet continuous, and the ACE-Step backend is not
-> implemented. Read [Limitations](#limitations) before relying on it.
+> **Early-stage project (v0.1).** Two neural backends work: MusicGen (30 s
+> clips) and ACE-Step (continuous tracks up to 5 minutes verified on a 4 GB
+> GPU). Read [Limitations](#limitations) before relying on it.
 
 **Hear examples:** [calm + rain](examples/calm-study-rain.mp3) ·
 [punk rock](examples/punk-rock.mp3) · [lofi beats](examples/lofi-beats.mp3)
@@ -77,7 +77,8 @@ prompt -> parser -> settings -> backend -> ambience mix -> retune -> audio + .js
 - **Parser** (rule-based): extracts duration ("4 min"), tempo ("120 bpm"), mood
   and genre keywords, rain/wind, instrumental vs vocals, and tuning ("450hz").
   Optionally a local Ollama model can rewrite the style description (`--llm`).
-- **Backends** (swappable): `synth` (CPU, no model), `musicgen`, `acestep` (placeholder).
+- **Backends** (swappable): `synth` (CPU, no model), `musicgen` (30 s clips),
+  `acestep` (one continuous generation of minutes; runs in its own environment).
 - **Ambience:** rain and wind are synthesized procedurally, so no sample licensing applies.
 - **Tuning:** `--tuning 450` shifts finished audio so concert A sits at 450 Hz.
 
@@ -103,6 +104,31 @@ aimusic "lofi study beats" --backend musicgen -y
 MP3 export needs `ffmpeg` on PATH. Run `aimusic doctor` to check your setup.
 Model weights (about 2 GB for MusicGen-small) download from Hugging Face on first use.
 
+### ACE-Step backend (continuous tracks, minutes long)
+
+ACE-Step pins its own PyTorch (2.7.1+cu128 on Windows), which conflicts with the
+MusicGen setup, so it is installed separately and `aimusic` runs it as a subprocess.
+
+```
+git clone https://github.com/ace-step/ACE-Step-1.5
+cd ACE-Step-1.5
+pip install uv
+uv sync                          # several GB; needs Python 3.11 or 3.12
+```
+
+Keep the `ACE-Step-1.5` folder next to this repo, or set `ACESTEP_HOME` to its path.
+Then:
+
+```
+aimusic "4 min soothing piano and ambient music for studying" --backend acestep -y
+```
+
+Model weights (about 7 GB) download on the first run. ACE-Step is MIT licensed.
+Low-memory mode is used automatically: no language model, INT8 weights and CPU offload
+(ACE-Step's own recommendation for 6 GB or less). On GPUs older than Ampere (RTX 30
+series), `aimusic` forces bfloat16, because the default float16 produced NaN errors
+on the test GPU (see [Limitations](#limitations)).
+
 ### Flags
 
 | Flag | Meaning |
@@ -127,7 +153,7 @@ Model weights (about 2 GB for MusicGen-small) download from Hugging Face on firs
 | MP3 export | working (the three example files) |
 | Rain/wind mixer, `--tuning`, `doctor` | working; the retune was verified on a pure tone, not on full tracks |
 | `--llm` (Ollama) enrichment | implemented, **never run** against a live Ollama |
-| `acestep` backend | **placeholder**; raises "not wired up yet" |
+| `acestep` backend | working, instrumental only so far. Tested on the same 4 GB GPU: 30 s in 28 s, 2 min in 109 s, 4 min in 454 s, 5 min in 995 s (each a single continuous pass; the 5 min output is 300.0 s of valid audio). Needs a longer-than-default timeout, which `aimusic` sets. Vocals/lyrics not tested. |
 | Output quality | not evaluated by a human listener yet |
 
 ## Limitations
@@ -136,20 +162,34 @@ Model weights (about 2 GB for MusicGen-small) download from Hugging Face on firs
 - MusicGen-small is a small model. Genre mixes (for example hip hop + punk) may
   come out as generic rock with a beat rather than a real fusion.
 - Instrumental only. MusicGen cannot sing, so `--lyrics` has no effect on it.
+- ACE-Step plans a whole song, so a "calm" prompt may still build up. In one
+  4-minute test the loudness rose about 10 times (RMS 0.017 to 0.2), while a
+  5-minute run with a different seed and prompt stayed steady (RMS 0.10-0.15).
+  So it varies by seed and prompt, and there is no control over it yet. Try a few seeds.
 - Prompts are interpreted loosely. "Rain" or "punk" is a request, not a guarantee.
 - Tuning (`--tuning`) is a post-process pitch shift. It also speeds the track up
   by the same small ratio (about 2% at 450 Hz) and uses simple interpolation.
   It cannot guarantee the final mix is in tune at that pitch.
 
 **Length**
-- MusicGen works in 30 s windows. Longer tracks are separate chunks joined by a
-  crossfade, so the music **may change character** at the joins. There is no
-  continuation yet and no 10-minute cap.
+- `--backend acestep` generates one continuous piece. Durations over 10 minutes
+  are rejected.
+- `--backend musicgen` works in 30 s windows. Longer tracks are separate chunks
+  joined by a crossfade, so the music **may change character** at the joins.
+  The tool prints a warning. Use ACE-Step for anything longer.
 
 **Speed and hardware**
-- Neural generation is slower than real time on a 4 GB laptop GPU (about 2.6x
-  for MusicGen-small: a 20 s clip took 64-85 s here). A 4-minute track would
-  take roughly 10 minutes; much longer jobs are not practical on that hardware.
+- On a 4 GB laptop GPU, ACE-Step took about 1x real time up to 2 minutes, but
+  slowed to about 1.9x at 4 minutes (454 s) and 3.3x at 5 minutes (995 s). Peak
+  memory reached 4.5 GB at 4 minutes, more than the card has, so it spills into
+  slower system memory. A 5-minute track takes about 16 minutes; longer tracks
+  (up to the 10-minute cap) are untested and may be much slower or fail.
+- ACE-Step's own default 600 s generation timeout is too short for this;
+  `aimusic` raises it to one hour (`ACESTEP_GENERATION_TIMEOUT`).
+- MusicGen-small is about 2.6x slower than real time (a 20 s clip took 64-85 s).
+- GPUs older than RTX 30 series (Turing and earlier) get float16 from ACE-Step,
+  which produced NaN output on the test GPU. `aimusic` works around this by forcing
+  bfloat16, which is emulated on those cards.
 - The `synth` backend is fast but sounds simple.
 - Backends pin different torch/transformers versions, so use one virtual
   environment per backend.
@@ -166,18 +206,17 @@ Model weights (about 2 GB for MusicGen-small) download from Hugging Face on firs
 
 ## What's next
 
-Planned in rough priority order. None of this is done yet.
+Planned in rough priority order. None of this is done yet. (ACE-Step was
+chosen over YuE, DiffRhythm and Stable Audio 3.0, which need more VRAM than a 4 GB card.)
 
-1. **ACE-Step 1.5 backend.** Its README lists 10 s to 10 min per generation, and
-   its install guide lists 4 GB VRAM as the minimum (DiT-only mode). That makes
-   it the best candidate for full songs with vocals on a small GPU. This comes
-   from docs and secondary sources; it has not been verified on this hardware.
-2. **Continuous long tracks.** Feed the end of the audio back to the model as a
-   prompt so the music continues instead of restarting, with a 10-minute cap,
-   progress and ETA, and resume after a crash.
-3. **Web UI** (Gradio).
-4. **Better prompt understanding** (more genres, instruments and moods; tested LLM mode).
-5. **CI and a GPU Docker image.**
+1. **Longer and steadier ACE-Step tracks:** test lengths up to the 10-minute cap,
+   speed up long generations on 4 GB cards, and explore ways to keep calm prompts
+   calm (loudness control).
+2. **Vocals and lyrics** with ACE-Step (supported by the model, not yet tested here).
+3. **Progress and ETA, plus resume after a crash** for long generations.
+4. **Web UI** (Gradio).
+5. **Better prompt understanding** (more genres, instruments and moods; tested LLM mode).
+6. **CI and a GPU Docker image.**
 
 YuE, DiffRhythm and Stable Audio 3.0 were considered but need more VRAM than a 4 GB card.
 
