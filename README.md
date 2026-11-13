@@ -40,6 +40,34 @@ aimusic "30 sec calm piano with rain" -y
 That uses the built-in `synth` backend: no GPU, no downloads, but basic sound.
 For real AI-generated music, install the [ACE-Step or MusicGen backend](#install).
 
+## Web UI
+
+Prefer a window to the terminal? Install the optional UI and start it:
+
+```
+pip install -e ".[ui]"
+aimusic ui
+```
+
+It opens in your browser at `http://127.0.0.1:7860` and only listens on your own
+machine. You get:
+
+- a prompt box with clickable example prompts;
+- a live "How I read your request" panel (length, style, ambience, tuning) that
+  updates as you type, before you generate anything;
+- a backend choice (it picks ACE-Step, then MusicGen, then the CPU synth, based on what
+  is installed) and advanced settings: length, seed, tuning, ambience, lyrics;
+- a progress bar with elapsed time and a rough time estimate (the estimate comes from
+  one 4 GB laptop GPU, so yours may differ), a built-in player, a download button, and
+  the exact settings used;
+- a **Stop** button. For ACE-Step it ends the generation process (tested: the process
+  exits within about 2 seconds and no partial file is saved). MusicGen and the synth
+  cannot be interrupted mid-run; they finish in the background.
+
+One track is generated at a time. Files are saved in an `output/` folder next to where
+you started it. The UI has been tested through its web API and with automated tests, but
+I have not looked at it in a browser, so layout problems are possible.
+
 ## Examples
 
 Just write what you want. The tool pulls out duration, tempo, mood, genre,
@@ -93,6 +121,7 @@ Copy a line (GitHub shows a copy button on each code block), paste it, and chang
 | The same result again | add `--seed 42` (use the same seed and the same prompt) |
 | A different take | change `--seed` (any number) |
 | MP3 instead of WAV | add `--out song.mp3` (needs ffmpeg) |
+| A window instead of the terminal | `aimusic ui` (see [Web UI](#web-ui)) |
 | To check my setup | `aimusic doctor` |
 
 <details>
@@ -207,13 +236,14 @@ on the test GPU (see [Limitations](#limitations)).
 
 | Part | State |
 |---|---|
-| Plain-English parser | working, rule-based; 8 unit tests pass |
+| Plain-English parser | working, rule-based; covered by the automated tests (17 in total across the project) |
 | `synth` backend (CPU, no model) | working; basic ambient pads, for testing and no-GPU use |
 | `musicgen` backend | working. Tested on Windows 11, Quadro T2000 (4 GB), torch 2.14.1+cu126, transformers 5.22.2 |
 | MP3 export | working (the three example files) |
 | Rain/wind mixer, `--tuning`, `doctor` | working; the retune was verified on a pure tone, not on full tracks |
 | `--llm` (Ollama) enrichment | implemented, **never run** against a live Ollama |
 | `acestep` backend | working, instrumental only so far. Tested on the same 4 GB GPU: 30 s in 28 s, 2 min in 109 s, 4 min in 454 s, 5 min in 995 s (each a single continuous pass; the 5 min output is 300.0 s of valid audio). Needs a longer-than-default timeout, which `aimusic` sets. Vocals/lyrics not tested. |
+| Web UI (`aimusic ui`, Gradio 6) | working: generates over its web API with the synth backend and a real ACE-Step job; Stop verified on ACE-Step; 17 automated tests pass. Layout not checked visually in a browser. |
 | Output quality | listened to by the author: okay, not high quality (see Limitations). Not benchmarked against other tools. |
 
 ## Limitations
@@ -292,7 +322,8 @@ chosen over YuE, DiffRhythm and Stable Audio 3.0, which need more VRAM than a 4 
    calm (loudness control).
 3. **Vocals and lyrics** with ACE-Step (supported by the model, not yet tested here).
 4. **Progress and ETA, plus resume after a crash** for long generations.
-5. **Web UI** (Gradio).
+5. **UI polish:** history of past tracks, MP3 download, a real browser check, and a
+   way to interrupt MusicGen mid-run.
 6. **Better prompt understanding** (more genres, instruments and moods; tested LLM mode).
 7. **CI and a GPU Docker image.**
 

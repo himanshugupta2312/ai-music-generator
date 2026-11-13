@@ -1,36 +1,29 @@
 """Command line entry point.
 
     aimusic "4 min soothing study music with rain, theme: forest floor"
+    aimusic ui          # open the web UI (needs: pip install "aimusic[ui]")
     aimusic doctor
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import re
-import shutil
-import subprocess
 import sys
 import time
 from pathlib import Path
 
 from . import __version__
 from .backends import BACKENDS, get_backend
-from .nlparse import enrich_with_ollama, parse_prompt
+from .pipeline import MAX_DURATION_S, build_settings, describe, render, save, validate  # noqa: F401
 from .schema import Settings
-from .soundscape import mix_soundscapes
-from .tuning import retune
-
-
-MAX_DURATION_S = 600  # 10-minute cap (ACE-Step's documented per-generation maximum)
 
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="aimusic",
         description="Describe music in plain English and generate it.",
-        epilog='Other command: "aimusic doctor" checks your environment.',
+        epilog='Other commands: "aimusic ui" opens the web UI, "aimusic doctor" checks your environment.',
     )
     p.add_argument("prompt", help="plain-English description of the music")
     p.add_argument("--backend", choices=BACKENDS, default="synth")
@@ -49,28 +42,22 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def _show(s: Settings) -> None:
     print("\nInterpreted request:")
-    print(f"  style     : {s.style_prompt}")
-    print(f"  duration  : {s.duration:.0f}s ({s.duration / 60:.1f} min)")
-    print(f"  vocals    : {'no (instrumental)' if s.lyrics == '[instrumental]' else 'yes'}")
-    print(f"  ambience  : {', '.join(s.soundscapes) or 'none'}"
-          + (f" @ {s.soundscape_level:.2f}" if s.soundscapes else ""))
-    print(f"  tuning    : A = {s.tuning_hz:g} Hz" + (" (shifted after generation)" if s.tuning_hz != 440 else ""))
-    print(f"  seed      : {s.seed if s.seed is not None else 'random'}\n")
+    for label, value in describe(s):
+        print(f"  {label:<10}: {value}")
+    print()
 
 
-def _write(audio, sr: int, out: Path) -> None:
-    import soundfile as sf
-
-    out.parent.mkdir(parents=True, exist_ok=True)
-    if out.suffix.lower() == ".mp3":
-        if not shutil.which("ffmpeg"):
-            raise RuntimeError("MP3 export needs ffmpeg on PATH (run `aimusic doctor`).")
-        wav = out.with_suffix(".tmp.wav")
-        sf.write(wav, audio, sr)
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(wav), str(out)], check=True)
-        wav.unlink()
-    else:
-        sf.write(out, audio, sr)
+def _run_ui(argv: list[str]) -> int:
+    ap = argparse.ArgumentParser(prog="aimusic ui", description="Open the aimusic web UI (local only).")
+    ap.add_argument("--port", type=int, default=7860)
+    args = ap.parse_args(argv)
+    try:
+        from .ui import launch
+    except ImportError:
+        print('The web UI needs Gradio. Install it with:  pip install "aimusic[ui]"', file=sys.stderr)
+        return 1
+    launch(port=args.port)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -78,30 +65,27 @@ def main(argv: list[str] | None = None) -> int:
     if argv and argv[0] == "doctor":
         from .doctor import run
         return run()
+    if argv and argv[0] == "ui":
+        return _run_ui(argv[1:])
 
     args = _build_parser().parse_args(argv)
-    s = parse_prompt(args.prompt)
-    if args.llm:
-        s = enrich_with_ollama(s, model=args.llm)
-    if args.duration:
-        s.duration = args.duration
-    if args.seed is not None:
-        s.seed = args.seed
-    if args.lyrics:
-        s.lyrics = args.lyrics.read_text(encoding="utf-8")
-    if args.tuning:
-        s.tuning_hz = args.tuning
-    if args.no_soundscape:
-        s.soundscapes = []
-    if args.ambience_level is not None:
-        s.soundscape_level = args.ambience_level
-
-    if s.duration > MAX_DURATION_S:
-        print(f"Duration {s.duration:.0f}s is over the {MAX_DURATION_S // 60}-minute limit.", file=sys.stderr)
+    s = build_settings(
+        args.prompt,
+        duration=args.duration,
+        seed=args.seed,
+        lyrics=args.lyrics.read_text(encoding="utf-8") if args.lyrics else None,
+        tuning=args.tuning,
+        ambience=not args.no_soundscape,
+        ambience_level=args.ambience_level,
+        llm=args.llm,
+    )
+    try:
+        warnings = validate(s, args.backend)
+    except ValueError as e:
+        print(str(e), file=sys.stderr)
         return 2
-    if args.backend == "musicgen" and s.duration > 30:
-        print("[note] MusicGen builds tracks over 30 s from separate chunks, so they will not "
-              "be continuous. Use --backend acestep for one continuous piece.")
+    for w in warnings:
+        print(f"[note] {w}")
 
     _show(s)
     if not args.yes and sys.stdin.isatty():
@@ -111,16 +95,11 @@ def main(argv: list[str] | None = None) -> int:
     t0 = time.time()
     backend = get_backend(args.backend)
     print(f"Generating with '{backend.name}' backend...")
-    audio = backend.generate(s)
-    audio = mix_soundscapes(audio, backend.sample_rate, s.soundscapes, s.soundscape_level, s.seed)
-    audio = retune(audio, s.tuning_hz)
+    audio = render(backend, s)
 
     slug = re.sub(r"[^a-z0-9]+", "-", args.prompt.lower()).strip("-")[:40] or "track"
     out = args.out or Path("output") / f"{slug}.wav"
-    _write(audio, backend.sample_rate, out)
-    meta = out.with_suffix(".json")
-    meta.write_text(json.dumps({**s.to_dict(), "backend": backend.name,
-                                "sample_rate": backend.sample_rate}, indent=2), encoding="utf-8")
+    meta = save(audio, backend.sample_rate, out, s, backend.name)
     print(f"Done in {time.time() - t0:.1f}s\n  audio   : {out}\n  settings: {meta}")
     return 0
 

@@ -46,7 +46,16 @@ class AceStepBackend(Backend):
     name = "acestep"
     sample_rate = 48000
 
+    def cancel(self) -> None:
+        """Stop the running ACE-Step subprocess (safe to call from another thread)."""
+        self._cancelled = True
+        proc = self._proc
+        if proc is not None and proc.poll() is None:
+            proc.terminate()
+
     def __init__(self) -> None:
+        self._proc = None
+        self._cancelled = False
         self.home = _find_home()
         self.python = _python_in(self.home)
         if not self.python.exists():
@@ -78,16 +87,21 @@ class AceStepBackend(Backend):
             env = os.environ.copy()
             env.setdefault("ACESTEP_GENERATION_TIMEOUT", "3600")
             env["PYTHONIOENCODING"] = "utf-8"
-            proc = subprocess.run(
+            self._cancelled = False
+            self._proc = subprocess.Popen(
                 [str(self.python), "-I", str(WORKER), str(job_file)],
                 env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 text=True, encoding="utf-8", errors="replace",
             )
-            lines = proc.stdout.splitlines()
+            stdout, _ = self._proc.communicate()
+            returncode, self._proc = self._proc.returncode, None
+            if self._cancelled:
+                raise RuntimeError("Generation was cancelled.")
+            lines = stdout.splitlines()
             path = next((l.split(" ", 1)[1].strip() for l in lines if l.startswith("AUDIO ")), None)
-            if proc.returncode != 0 or not path:
+            if returncode != 0 or not path:
                 tail = "\n".join(l for l in lines if l.startswith(("ERROR", "[worker]")) or "Error" in l)[-1500:]
-                raise RuntimeError(f"ACE-Step generation failed (exit {proc.returncode}).\n{tail}")
+                raise RuntimeError(f"ACE-Step generation failed (exit {returncode}).\n{tail}")
             audio, sr = sf.read(path, dtype="float32", always_2d=True)
             self.sample_rate = sr
             return audio

@@ -15,6 +15,9 @@ class Backend(ABC):
     def generate(self, s: Settings) -> np.ndarray:
         """Return float32 audio shaped (samples, channels) in [-1, 1]."""
 
+    def cancel(self) -> None:
+        """Try to stop a running generate() from another thread. Default: cannot be stopped."""
+
 
 def crossfade_concat(chunks: list[np.ndarray], sr: int, fade_s: float = 2.0) -> np.ndarray:
     """Join audio chunks with an equal-power-ish linear crossfade."""
