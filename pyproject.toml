@@ -19,7 +19,6 @@ dependencies = [
 # so install only one per virtual environment.
 musicgen = ["torch", "torchaudio", "transformers>=4.40", "accelerate"]
 acestep = []          # installed separately (own venv); see README
-ui = ["gradio>=5"]    # local web UI: `aimusic ui`
 dev = ["pytest"]
 
 [project.scripts]

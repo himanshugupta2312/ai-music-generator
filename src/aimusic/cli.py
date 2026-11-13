@@ -1,7 +1,7 @@
 """Command line entry point.
 
     aimusic "4 min soothing study music with rain, theme: forest floor"
-    aimusic ui          # open the web UI (needs: pip install "aimusic[ui]")
+    aimusic ui          # open the 3D web UI (local only, no extra install)
     aimusic doctor
 """
 
@@ -52,12 +52,9 @@ def _run_ui(argv: list[str]) -> int:
     ap.add_argument("--port", type=int, default=7860)
     ap.add_argument("--no-browser", action="store_true", help="don't open a browser tab automatically")
     args = ap.parse_args(argv)
-    try:
-        from .ui import launch
-    except ImportError:
-        print('The web UI needs Gradio. Install it with:  pip install "aimusic[ui]"', file=sys.stderr)
-        return 1
-    launch(port=args.port, inbrowser=not args.no_browser)
+    from .webserver import run
+
+    run(port=args.port, open_browser=not args.no_browser)
     return 0
 
 

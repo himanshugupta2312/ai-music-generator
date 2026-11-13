@@ -40,12 +40,11 @@ aimusic "30 sec calm piano with rain" -y
 That uses the built-in `synth` backend: no GPU, no downloads, but basic sound.
 For real AI-generated music, install the [ACE-Step or MusicGen backend](#install).
 
-## Web UI
+## Web UI (3D)
 
-Prefer a window to the terminal? Install the optional UI and start it:
+Prefer a window to the terminal? Start the built-in web UI. It needs no extra install:
 
 ```
-pip install -e ".[ui]"
 aimusic ui
 ```
 
@@ -53,30 +52,43 @@ It opens in your browser at `http://127.0.0.1:7860` and only listens on your own
 machine. Use `aimusic ui --no-browser` if you don't want a tab opened for you, or
 `--port 7861` to change the port.
 
-![The aimusic web UI after generating a track (screenshot taken with the quick synth backend)](docs/ui-screenshot.png)
+![The aimusic 3D web UI while a track is being made (software-rendered screenshot, quick synth backend)](docs/ui-screenshot.png)
 
 What you get:
 
-- **🎭 Vibe buttons:** one click fills the prompt for Study time, Workout, Lofi café,
-  Movie trailer, Sleepy time, Jazz night, Forest floor, or a Genre mash-up (short
-  lengths, so a first try is quick).
-- **🎲 Surprise me!** builds a random prompt from lengths, styles and extras.
-- **🔍 Live "How I'll read it" panel:** length, style, ambience and tuning update as you
-  type, before anything is generated.
-- **⏳ Playful progress:** rotating status lines with the elapsed time and a rough
-  estimate (calibrated on one 4 GB laptop GPU, so yours may differ).
-- **🔁 Another take:** the same idea with a fresh random seed. Every run records its seed,
-  so the saved settings ("the recipe") can reproduce a track exactly.
-- **🎧 Waveform player, a download button, and a session history** to replay earlier tracks.
-- **🎚️ Advanced settings:** length, seed (with a dice button), tuning, ambience, lyrics.
-- **⏹ Stop:** for ACE-Step it ends the generation process (tested: the process exits
-  within about 2 seconds and no partial file is saved). MusicGen and the synth cannot
-  be interrupted mid-run; they finish in the background.
+- **🔮 A 3D scene (WebGL):** a glowing orb with a particle halo, orbit rings and a wave
+  floor, with bloom. It reacts to the music: when a track plays, the visuals follow the
+  beats (bass, mids and treble from a live audio analyser), and the whole scene shifts
+  colour with the vibe or the words you type.
+- **🎭 Tilting vibe cards:** Study time, Workout, Lofi café, Movie trailer, Sleepy time,
+  Jazz night, Forest floor and a Genre mash-up. One click fills the prompt (short lengths,
+  so a first try is quick).
+- **🎲 Surprise me** builds a random prompt, and a **🔁 Another take** button reruns the
+  same idea with a fresh seed. Every run records its seed in the saved settings, so a
+  track can be reproduced exactly.
+- **🔍 Live "how I read it" pills** (length, style, ambience, tuning) update as you type,
+  before anything is generated.
+- **⏳ A glowing progress ring** with elapsed time and a rough estimate (calibrated on one
+  4 GB laptop GPU, so yours may differ), plus playful status lines.
+- **🎧 A player** with seek, download, and a session history to replay earlier tracks.
+  Space toggles play and pause.
+- **⏹ Stop:** for ACE-Step it ends the generation process (the process exits and no partial
+  file is saved). MusicGen and the synth cannot be interrupted mid-run; they finish in
+  the background and their result is discarded.
+
+How it is built: a small standard-library Python server (no Gradio) serves the page and
+a JSON API, and the front end is plain JavaScript plus [Three.js](https://threejs.org)
+r160, which is vendored in the repo so it works offline. The server only accepts
+requests addressed to localhost, requires JSON for every POST and rejects cross-site
+requests, because the API can start GPU jobs.
 
 One track is generated at a time. Files are saved in an `output/` folder next to where
-you started it. It has been checked in headless Edge (light and dark mode) by clicking
-through a vibe, generating, taking another take and using Surprise me. The layout on a
-phone-sized screen was not verified, and I have not tried other browsers.
+you started it. If WebGL is unavailable, the page falls back to a plain gradient
+background and everything else still works. It was checked in headless Edge with
+software WebGL (idle, vibe click, generate, play, another take, Surprise me, Stop, and a
+phone-sized 390 px viewport with no horizontal overflow), with no JavaScript errors. I
+have not tried other browsers or a real GPU-accelerated run, and the software renderer
+is slower than real hardware, so animation smoothness is unverified.
 
 ## Examples
 
@@ -246,14 +258,14 @@ on the test GPU (see [Limitations](#limitations)).
 
 | Part | State |
 |---|---|
-| Plain-English parser | working, rule-based; covered by the automated tests (18 in total across the project) |
+| Plain-English parser | working, rule-based; covered by the automated tests (22 in total across the project) |
 | `synth` backend (CPU, no model) | working; basic ambient pads, for testing and no-GPU use |
 | `musicgen` backend | working. Tested on Windows 11, Quadro T2000 (4 GB), torch 2.14.1+cu126, transformers 5.22.2 |
 | MP3 export | working (the three example files) |
 | Rain/wind mixer, `--tuning`, `doctor` | working; the retune was verified on a pure tone, not on full tracks |
 | `--llm` (Ollama) enrichment | implemented, **never run** against a live Ollama |
 | `acestep` backend | working, instrumental only so far. Tested on the same 4 GB GPU: 30 s in 28 s, 2 min in 109 s, 4 min in 454 s, 5 min in 995 s (each a single continuous pass; the 5 min output is 300.0 s of valid audio). Needs a longer-than-default timeout, which `aimusic` sets. Vocals/lyrics not tested. |
-| Web UI (`aimusic ui`, Gradio 6) | working: driven in headless Edge (vibe click, generate, another take, surprise me) with the synth backend; a real ACE-Step job was started and stopped through it. Phone-sized layout not verified. |
+| Web UI (`aimusic ui`, 3D, Three.js) | working: driven in headless Edge with software WebGL (vibe, generate, play, another take, Surprise me, Stop, phone width) using the synth backend; no JS errors. Through its API with real ACE-Step: a job was cancelled (processes ended in 2 s, nothing saved) and a 20 s job completed. Not tried on a real GPU-accelerated browser or other browsers. |
 | Output quality | listened to by the author: okay, not high quality (see Limitations). Not benchmarked against other tools. |
 
 ## Limitations
@@ -332,8 +344,8 @@ chosen over YuE, DiffRhythm and Stable Audio 3.0, which need more VRAM than a 4 
    calm (loudness control).
 3. **Vocals and lyrics** with ACE-Step (supported by the model, not yet tested here).
 4. **Progress and ETA, plus resume after a crash** for long generations.
-5. **UI polish:** history of past tracks, MP3 download, a real browser check, and a
-   way to interrupt MusicGen mid-run.
+5. **UI polish:** MP3 download, a history that survives restarts, checks in other
+   browsers and on real GPU hardware, and a way to interrupt MusicGen mid-run.
 6. **Better prompt understanding** (more genres, instruments and moods; tested LLM mode).
 7. **CI and a GPU Docker image.**
 

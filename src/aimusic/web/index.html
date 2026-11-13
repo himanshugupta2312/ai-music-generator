@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>aimusic</title>
+<meta name="description" content="Describe a vibe, get a tune. Local, open-source AI music with a 3D visualizer.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50' font-size='52'%3E%F0%9F%8E%B5%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/style.css">
+<script type="importmap">
+{"imports": {"three": "/static/vendor/three.module.min.js", "three/addons/": "/static/vendor/addons/"}}
+</script>
+</head>
+<body>
+<canvas id="scene" aria-hidden="true"></canvas>
+<div class="shade" aria-hidden="true"></div>
+
+<div id="app">
+  <header class="top">
+    <h1 class="logo"><span class="note" aria-hidden="true">♪</span> aimusic</h1>
+    <p class="tag">Tell me a vibe. I'll make a tune.</p>
+    <ul class="chips">
+      <li>🔒 runs on your computer</li>
+      <li>🎲 every take is different</li>
+      <li>📦 open source</li>
+    </ul>
+  </header>
+
+  <div class="layout">
+    <div class="left">
+      <section aria-labelledby="vibes-h">
+        <h2 id="vibes-h">Pick a vibe</h2>
+        <div id="vibes" class="vibes"></div>
+      </section>
+
+      <section class="glass composer" aria-labelledby="compose-h">
+        <h2 id="compose-h">…or describe your own</h2>
+        <div class="promptrow">
+          <textarea id="prompt" rows="2" placeholder="e.g. 3 min soothing piano with rain, good for studying"
+                    aria-label="Describe the music"></textarea>
+          <button id="surprise" class="ghost" type="button">🎲 Surprise me</button>
+        </div>
+
+        <div id="read" class="read" aria-live="polite"></div>
+
+        <fieldset class="backends">
+          <legend>Who's playing?</legend>
+          <div id="backends" class="backend-grid"></div>
+        </fieldset>
+
+        <details class="adv">
+          <summary>🎚️ Advanced settings</summary>
+          <div class="advgrid">
+            <label>Length in seconds <small>(0 = from the prompt, max 600)</small>
+              <input id="duration" type="number" min="0" max="600" step="1" value="0"></label>
+            <label>Seed <small>(empty = surprise me)</small>
+              <span class="seedrow"><input id="seed" type="number" min="1" step="1" placeholder="random">
+                <button id="dice" class="ghost" type="button" aria-label="Roll a random seed">🎲</button></span></label>
+            <label>Tuning: concert A in Hz
+              <input id="tuning" type="number" min="400" max="480" step="1" value="440"></label>
+            <label class="check"><input id="ambience" type="checkbox" checked> 🌧️ Mix in rain/wind if the prompt asks for it</label>
+            <label>Ambience level <output id="levelout">0.35</output>
+              <input id="level" type="range" min="0" max="1" step="0.05" value="0.35"></label>
+            <label class="wide">Lyrics <small>(optional; ACE-Step only, untested; empty = instrumental)</small>
+              <textarea id="lyrics" rows="3" placeholder="[verse]&#10;..."></textarea></label>
+          </div>
+        </details>
+
+        <div class="actions">
+          <button id="go" class="primary" type="button">✨ Make music</button>
+          <button id="again" class="ghost" type="button">🔁 Another take</button>
+          <button id="stop" class="ghost danger" type="button" disabled>⏹ Stop</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="right">
+      <section class="stage" id="stage" aria-label="Now playing">
+        <div class="orbspace">
+          <div id="working" class="working" hidden>
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="track" cx="60" cy="60" r="52"/>
+              <circle id="ring" class="bar" cx="60" cy="60" r="52"/>
+            </svg>
+            <div class="ringtext"><b id="elapsed">0:00</b><small id="est"></small></div>
+          </div>
+        </div>
+        <p id="status" class="status" role="status" aria-live="polite">Pick a vibe and press <b>Make music</b>.</p>
+
+        <div class="glass player" id="player" hidden>
+          <p id="title" class="title"></p>
+          <div class="controls">
+            <button id="play" class="round" type="button" aria-label="Play">▶</button>
+            <input id="seek" type="range" min="0" max="1000" value="0" aria-label="Seek">
+            <span id="time" class="time">0:00 / 0:00</span>
+            <a id="download" class="ghost dl" download>⬇️ Download</a>
+          </div>
+          <audio id="audio" preload="auto"></audio>
+        </div>
+      </section>
+
+      <section class="glass history" id="historybox" hidden aria-labelledby="hist-h">
+        <h2 id="hist-h">🕘 Your tracks this session</h2>
+        <ol id="history"></ol>
+      </section>
+    </div>
+  </div>
+
+  <footer>Early-stage project: results are okay, not studio quality. A long track can take a while on a small GPU,
+    so the timer is only a rough guide. Everything stays on your computer.</footer>
+</div>
+<div id="toast" role="alert" aria-live="assertive"></div>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

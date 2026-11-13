@@ -124,6 +124,19 @@ def estimate_seconds(backend_name: str, duration: float) -> float:
     return float(ys[-1] + (duration - xs[-1]) * slope)
 
 
+def available_backends() -> dict[str, bool]:
+    """Which backends look usable on this machine (detection only, nothing is loaded)."""
+    acestep = False
+    try:
+        from .backends.acestep import _find_home, _python_in
+
+        acestep = _python_in(_find_home()).exists()
+    except Exception:  # noqa: BLE001 - detection only
+        pass
+    musicgen = bool(importlib.util.find_spec("torch") and importlib.util.find_spec("transformers"))
+    return {"acestep": acestep, "musicgen": musicgen, "synth": True}
+
+
 def default_backend() -> str:
     """Best backend that looks usable on this machine: acestep, then musicgen, then synth."""
     try:
