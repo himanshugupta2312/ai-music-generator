@@ -50,13 +50,14 @@ def _show(s: Settings) -> None:
 def _run_ui(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="aimusic ui", description="Open the aimusic web UI (local only).")
     ap.add_argument("--port", type=int, default=7860)
+    ap.add_argument("--no-browser", action="store_true", help="don't open a browser tab automatically")
     args = ap.parse_args(argv)
     try:
         from .ui import launch
     except ImportError:
         print('The web UI needs Gradio. Install it with:  pip install "aimusic[ui]"', file=sys.stderr)
         return 1
-    launch(port=args.port)
+    launch(port=args.port, inbrowser=not args.no_browser)
     return 0
 
 

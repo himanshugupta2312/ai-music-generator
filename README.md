@@ -50,23 +50,33 @@ aimusic ui
 ```
 
 It opens in your browser at `http://127.0.0.1:7860` and only listens on your own
-machine. You get:
+machine. Use `aimusic ui --no-browser` if you don't want a tab opened for you, or
+`--port 7861` to change the port.
 
-- a prompt box with clickable example prompts;
-- a live "How I read your request" panel (length, style, ambience, tuning) that
-  updates as you type, before you generate anything;
-- a backend choice (it picks ACE-Step, then MusicGen, then the CPU synth, based on what
-  is installed) and advanced settings: length, seed, tuning, ambience, lyrics;
-- a progress bar with elapsed time and a rough time estimate (the estimate comes from
-  one 4 GB laptop GPU, so yours may differ), a built-in player, a download button, and
-  the exact settings used;
-- a **Stop** button. For ACE-Step it ends the generation process (tested: the process
-  exits within about 2 seconds and no partial file is saved). MusicGen and the synth
-  cannot be interrupted mid-run; they finish in the background.
+![The aimusic web UI after generating a track (screenshot taken with the quick synth backend)](docs/ui-screenshot.png)
+
+What you get:
+
+- **🎭 Vibe buttons:** one click fills the prompt for Study time, Workout, Lofi café,
+  Movie trailer, Sleepy time, Jazz night, Forest floor, or a Genre mash-up (short
+  lengths, so a first try is quick).
+- **🎲 Surprise me!** builds a random prompt from lengths, styles and extras.
+- **🔍 Live "How I'll read it" panel:** length, style, ambience and tuning update as you
+  type, before anything is generated.
+- **⏳ Playful progress:** rotating status lines with the elapsed time and a rough
+  estimate (calibrated on one 4 GB laptop GPU, so yours may differ).
+- **🔁 Another take:** the same idea with a fresh random seed. Every run records its seed,
+  so the saved settings ("the recipe") can reproduce a track exactly.
+- **🎧 Waveform player, a download button, and a session history** to replay earlier tracks.
+- **🎚️ Advanced settings:** length, seed (with a dice button), tuning, ambience, lyrics.
+- **⏹ Stop:** for ACE-Step it ends the generation process (tested: the process exits
+  within about 2 seconds and no partial file is saved). MusicGen and the synth cannot
+  be interrupted mid-run; they finish in the background.
 
 One track is generated at a time. Files are saved in an `output/` folder next to where
-you started it. The UI has been tested through its web API and with automated tests, but
-I have not looked at it in a browser, so layout problems are possible.
+you started it. It has been checked in headless Edge (light and dark mode) by clicking
+through a vibe, generating, taking another take and using Surprise me. The layout on a
+phone-sized screen was not verified, and I have not tried other browsers.
 
 ## Examples
 
@@ -236,14 +246,14 @@ on the test GPU (see [Limitations](#limitations)).
 
 | Part | State |
 |---|---|
-| Plain-English parser | working, rule-based; covered by the automated tests (17 in total across the project) |
+| Plain-English parser | working, rule-based; covered by the automated tests (18 in total across the project) |
 | `synth` backend (CPU, no model) | working; basic ambient pads, for testing and no-GPU use |
 | `musicgen` backend | working. Tested on Windows 11, Quadro T2000 (4 GB), torch 2.14.1+cu126, transformers 5.22.2 |
 | MP3 export | working (the three example files) |
 | Rain/wind mixer, `--tuning`, `doctor` | working; the retune was verified on a pure tone, not on full tracks |
 | `--llm` (Ollama) enrichment | implemented, **never run** against a live Ollama |
 | `acestep` backend | working, instrumental only so far. Tested on the same 4 GB GPU: 30 s in 28 s, 2 min in 109 s, 4 min in 454 s, 5 min in 995 s (each a single continuous pass; the 5 min output is 300.0 s of valid audio). Needs a longer-than-default timeout, which `aimusic` sets. Vocals/lyrics not tested. |
-| Web UI (`aimusic ui`, Gradio 6) | working: generates over its web API with the synth backend and a real ACE-Step job; Stop verified on ACE-Step; 17 automated tests pass. Layout not checked visually in a browser. |
+| Web UI (`aimusic ui`, Gradio 6) | working: driven in headless Edge (vibe click, generate, another take, surprise me) with the synth backend; a real ACE-Step job was started and stopped through it. Phone-sized layout not verified. |
 | Output quality | listened to by the author: okay, not high quality (see Limitations). Not benchmarked against other tools. |
 
 ## Limitations

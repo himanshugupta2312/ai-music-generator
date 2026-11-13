@@ -68,11 +68,19 @@ def test_ui_builds_and_generates_with_synth(tmp_path, monkeypatch):
     app = ui.build_app()
     assert app is not None
     # run the generator directly (no browser): synth backend, 5 seconds
-    out = list(ui.generate("calm piano with rain", "synth", 5, 3, 440, True, 0.35, "", progress=lambda *a, **k: None))
-    status, audio_path, settings, file_path = out[-1]
+    out = list(ui.generate("calm piano with rain", "synth", 5, 3, 440, True, 0.35, "", [],
+                           progress=lambda *a, **k: None))
+    status, audio_path, settings, file_path, history, _dd = out[-1]
     assert "Done" in status and audio_path and audio_path.endswith(".wav")
     assert settings["duration"] == 5.0 and settings["soundscapes"] == ["rain"]
+    assert settings["seed"] == 3
+    assert len(history) == 1 and history[0][1] == audio_path
     assert (tmp_path / "output").exists()
+
+    # blank seed gets a real random seed, so the saved recipe is reproducible
+    out2 = list(ui.generate("calm piano", "synth", 5, None, 440, False, 0.35, "", history,
+                            progress=lambda *a, **k: None))
+    assert isinstance(out2[-1][2]["seed"], int) and len(out2[-1][4]) == 2  # history grows
 
 
 def test_ui_stop_cancels_backend(tmp_path, monkeypatch):
@@ -98,7 +106,22 @@ def test_ui_stop_cancels_backend(tmp_path, monkeypatch):
             cancelled.set()
 
     monkeypatch.setattr(ui, "get_backend", lambda name: Slow())
-    gen = ui.generate("calm piano", "synth", 5, 1, 440, False, 0.35, "", progress=lambda *a, **k: None)
+    gen = ui.generate("calm piano", "synth", 5, 1, 440, False, 0.35, "", [], progress=lambda *a, **k: None)
     next(gen)          # first status update: generation is running
     gen.close()        # user pressed Stop
     assert cancelled.is_set()
+
+
+def test_fun_prompts_all_parse_within_limits():
+    import random
+
+    pytest.importorskip("gradio")
+    from aimusic import ui
+
+    rng = random.Random(0)
+    prompts = [ui.surprise_prompt(rng) for _ in range(200)] + [p for _, p in ui.VIBES]
+    for p in prompts:
+        s = pipeline.build_settings(p)
+        pipeline.validate(s, "acestep")  # raises if the prompt is unusable
+    assert len(set(prompts)) > 20          # Surprise me is actually varied
+    assert len(ui.VIBES) == 8 and all(label and text for label, text in ui.VIBES)
