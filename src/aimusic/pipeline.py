@@ -114,7 +114,7 @@ _ACESTEP_POINTS = [(0, 15), (30, 28 + 15), (120, 109 + 15), (240, 454 + 15), (30
 def estimate_seconds(backend_name: str, duration: float) -> float:
     """Very rough wall-clock estimate, used only for a progress bar. Hardware dependent."""
     if backend_name == "synth":
-        return 2 + duration * 0.05
+        return 1 + duration * 0.025
     if backend_name == "musicgen":
         return 15 + duration * 2.6
     xs, ys = zip(*_ACESTEP_POINTS)

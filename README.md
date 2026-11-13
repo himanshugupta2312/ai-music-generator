@@ -37,7 +37,7 @@ pip install -e ".[dev]"
 aimusic "30 sec calm piano with rain" -y
 ```
 
-That uses the built-in `synth` backend: no GPU, no downloads, but basic sound.
+That uses the built-in `synth` backend: no GPU, no downloads, and instant. It reads the style you ask for (punk, lofi, jazz, cinematic and so on) and plays a simple, toy-synth version of it.
 For real AI-generated music, install the [ACE-Step or MusicGen backend](#install).
 
 ## Web UI (3D)
@@ -258,8 +258,8 @@ on the test GPU (see [Limitations](#limitations)).
 
 | Part | State |
 |---|---|
-| Plain-English parser | working, rule-based; covered by the automated tests (22 in total across the project) |
-| `synth` backend (CPU, no model) | working; basic ambient pads, for testing and no-GPU use |
+| Plain-English parser | working, rule-based; covered by the automated tests (34 in total across the project) |
+| `synth` backend (CPU, no model) | working; genre-aware procedural music (ambient/sleep, lofi, hip hop, trap, jazz, punk, cinematic, punk + hip hop mash-up) with drums, bass and chords. Toy-synth sound, not a trained model. 30 s renders in under a second, 10 min in about 13 s. Listening quality not judged by ear. |
 | `musicgen` backend | working. Tested on Windows 11, Quadro T2000 (4 GB), torch 2.14.1+cu126, transformers 5.22.2 |
 | MP3 export | working (the three example files) |
 | Rain/wind mixer, `--tuning`, `doctor` | working; the retune was verified on a pure tone, not on full tracks |

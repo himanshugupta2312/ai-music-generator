@@ -27,7 +27,7 @@ WEB_DIR = Path(__file__).with_name("web")
 BACKEND_INFO = {
     "acestep": ("ACE-Step", "one long, continuous piece"),
     "musicgen": ("MusicGen", "short 30 s clips"),
-    "synth": ("Quick synth", "instant, simple sound"),
+    "synth": ("Quick synth", "instant, toy-synth take on your style"),
 }
 
 MIME = {
