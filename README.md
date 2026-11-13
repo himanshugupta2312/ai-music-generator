@@ -14,6 +14,10 @@ plus a `.json` file with every setting used.
 > longer than 30 s are not yet continuous, and the ACE-Step backend is not
 > implemented. Read [Limitations](#limitations) before relying on it.
 
+**Hear examples:** [calm + rain](examples/calm-study-rain.mp3) ·
+[punk rock](examples/punk-rock.mp3) · [lofi beats](examples/lofi-beats.mp3)
+(20 s each, all in [`examples/`](examples/); details in [Examples](#examples) below)
+
 ## Try it in 2 minutes
 
 ```
