@@ -1,0 +1,13 @@
+{
+  "style_prompt": "jazz, soft piano, brushed drums, solo piano, 70 bpm",
+  "lyrics": "[instrumental]",
+  "duration": 45.0,
+  "tempo": 70,
+  "seed": 4,
+  "tuning_hz": 440.0,
+  "soundscapes": [],
+  "soundscape_level": 0.35,
+  "original_prompt": "45 sec mellow jazz with soft piano, 70 bpm",
+  "backend": "acestep",
+  "sample_rate": 48000
+}

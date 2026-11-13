@@ -1,0 +1,15 @@
+{
+  "style_prompt": "soothing, calm, gentle, slow tempo, focus music, ambient, minimal, steady, solo piano",
+  "lyrics": "[instrumental]",
+  "duration": 120.0,
+  "tempo": null,
+  "seed": 3,
+  "tuning_hz": 440.0,
+  "soundscapes": [
+    "rain"
+  ],
+  "soundscape_level": 0.35,
+  "original_prompt": "2 min calm soothing piano music with rain for studying",
+  "backend": "acestep",
+  "sample_rate": 48000
+}

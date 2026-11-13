@@ -14,9 +14,11 @@ plus a `.json` file with every setting used.
 > clips) and ACE-Step (continuous tracks up to 5 minutes verified on a 4 GB
 > GPU). Read [Limitations](#limitations) before relying on it.
 
-**Hear examples:** [calm + rain](examples/calm-study-rain.mp3) ·
-[punk rock](examples/punk-rock.mp3) · [lofi beats](examples/lofi-beats.mp3)
-(20 s each, all in [`examples/`](examples/); details in [Examples](#examples) below)
+**Hear examples** (made with ACE-Step): [calm + rain, 2 min](examples/acestep-calm-study-rain-2min.mp3) ·
+[punk rock](examples/acestep-punk-rock.mp3) · [lofi beats](examples/acestep-lofi-beats.mp3) ·
+[cinematic](examples/acestep-cinematic.mp3) · [jazz](examples/acestep-jazz.mp3) ·
+[hip hop + punk at 450 Hz](examples/acestep-hiphop-punk-450hz.mp3)
+(all in [`examples/`](examples/); prompts and details in [Examples](#examples) below)
 
 ## Try it in 2 minutes
 
@@ -30,26 +32,41 @@ aimusic "30 sec calm piano with rain" -y
 ```
 
 That uses the built-in `synth` backend: no GPU, no downloads, but basic sound.
-For real AI-generated music, install the [MusicGen backend](#install).
+For real AI-generated music, install the [ACE-Step or MusicGen backend](#install).
 
 ## Examples
 
 Just write what you want. The tool pulls out duration, tempo, mood, genre,
 ambience and tuning, then shows you the result before generating.
 
+**ACE-Step** (one continuous piece, 48 kHz stereo; add `--backend acestep`):
+
 | You type | It understands | Listen |
 |---|---|---|
-| `aimusic "20 sec calm soothing piano music with rain for studying"` | 20 s, instrumental, calm piano style, **rain layer mixed in** | [calm-study-rain.mp3](examples/calm-study-rain.mp3) |
-| `aimusic "20 sec punk rock with distorted guitars and fast drums"` | 20 s, punk rock, distorted guitars, energetic | [punk-rock.mp3](examples/punk-rock.mp3) |
-| `aimusic "20 sec lofi hip hop beats, mellow, 85 bpm"` | 20 s, lo-fi hip hop, boom bap drums, 85 bpm | [lofi-beats.mp3](examples/lofi-beats.mp3) |
+| `aimusic "2 min calm soothing piano music with rain for studying" --seed 3` | 2 min, instrumental, calm piano, **rain layer mixed in** | [acestep-calm-study-rain-2min.mp3](examples/acestep-calm-study-rain-2min.mp3) |
+| `aimusic "45 sec punk rock with distorted guitars and fast drums" --seed 5` | punk rock, distorted guitars, power chords | [acestep-punk-rock.mp3](examples/acestep-punk-rock.mp3) |
+| `aimusic "45 sec lofi hip hop beats, mellow, 85 bpm" --seed 8` | lo-fi hip hop, boom bap drums, 808 bass, 85 bpm | [acestep-lofi-beats.mp3](examples/acestep-lofi-beats.mp3) |
+| `aimusic "45 sec epic cinematic music" --seed 2` | cinematic, orchestral, epic, powerful drums | [acestep-cinematic.mp3](examples/acestep-cinematic.mp3) |
+| `aimusic "45 sec mellow jazz with soft piano, 70 bpm" --seed 4` | jazz, soft piano, brushed drums, 70 bpm | [acestep-jazz.mp3](examples/acestep-jazz.mp3) |
+| `aimusic "45 sec soundtrack with hip hop beats and punk music at 450hz" --seed 11` | hip hop + punk, **tuned to A = 450 Hz** (pitch-shifted afterwards) | [acestep-hiphop-punk-450hz.mp3](examples/acestep-hiphop-punk-450hz.mp3) |
+
+**MusicGen** (20 s clips, 32 kHz mono; add `--backend musicgen`):
+
+| You type | It understands | Listen |
+|---|---|---|
+| `aimusic "20 sec calm soothing piano music with rain for studying" --seed 3` | 20 s, calm piano, rain layer | [calm-study-rain.mp3](examples/calm-study-rain.mp3) |
+| `aimusic "20 sec punk rock with distorted guitars and fast drums" --seed 5` | 20 s, punk rock | [punk-rock.mp3](examples/punk-rock.mp3) |
+| `aimusic "20 sec lofi hip hop beats, mellow, 85 bpm" --seed 8` | 20 s, lo-fi hip hop, 85 bpm | [lofi-beats.mp3](examples/lofi-beats.mp3) |
 
 Each example has a `.json` next to it in [`examples/`](examples/) with the exact
 settings and seed, so you can reproduce it.
 
 > **About these samples:** they are the first output for each prompt, **not
 > hand-picked**, and I have not listened to them for quality. Expect rough edges.
-> They were made with MusicGen-small, whose weights are non-commercial
-> (CC-BY-NC), so treat them as demonstrations only.
+> They are demonstrations only. MusicGen's model weights are non-commercial
+> (CC-BY-NC); ACE-Step's code is MIT-licensed, but check its model terms before
+> any commercial use. The 450 Hz example is 44 s because the retune shortens the
+> audio by about 2%.
 
 More things you can say:
 

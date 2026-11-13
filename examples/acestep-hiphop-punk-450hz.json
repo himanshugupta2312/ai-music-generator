@@ -1,0 +1,13 @@
+{
+  "style_prompt": "punk rock, distorted electric guitars, fast power chords, raw, energetic, hip hop, boom bap drum beat, 808 bass, sampled loops",
+  "lyrics": "[instrumental]",
+  "duration": 45.0,
+  "tempo": null,
+  "seed": 11,
+  "tuning_hz": 450.0,
+  "soundscapes": [],
+  "soundscape_level": 0.35,
+  "original_prompt": "45 sec soundtrack with hip hop beats and punk music at 450hz",
+  "backend": "acestep",
+  "sample_rate": 48000
+}
