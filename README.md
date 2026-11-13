@@ -62,7 +62,8 @@ Each example has a `.json` next to it in [`examples/`](examples/) with the exact
 settings and seed, so you can reproduce it.
 
 > **About these samples:** they are the first output for each prompt, **not
-> hand-picked**, and I have not listened to them for quality. Expect rough edges.
+> hand-picked**. The author listened to them and rated the quality as okay but
+> not high: expect rough edges and see [Limitations](#limitations) for why.
 > They are demonstrations only. MusicGen's model weights are non-commercial
 > (CC-BY-NC); ACE-Step's code is MIT-licensed, but check its model terms before
 > any commercial use. The 450 Hz example is 44 s because the retune shortens the
@@ -171,11 +172,26 @@ on the test GPU (see [Limitations](#limitations)).
 | Rain/wind mixer, `--tuning`, `doctor` | working; the retune was verified on a pure tone, not on full tracks |
 | `--llm` (Ollama) enrichment | implemented, **never run** against a live Ollama |
 | `acestep` backend | working, instrumental only so far. Tested on the same 4 GB GPU: 30 s in 28 s, 2 min in 109 s, 4 min in 454 s, 5 min in 995 s (each a single continuous pass; the 5 min output is 300.0 s of valid audio). Needs a longer-than-default timeout, which `aimusic` sets. Vocals/lyrics not tested. |
-| Output quality | not evaluated by a human listener yet |
+| Output quality | listened to by the author: okay, not high quality (see Limitations). Not benchmarked against other tools. |
 
 ## Limitations
 
 **Music quality and control**
+- **Audio quality is okay, not high.** Quick measurements of the examples agree:
+  the ACE-Step tracks have little energy above 8 kHz (-23 to -30 dB), a 5-minute
+  track had almost nothing above 2 kHz, and the MusicGen lofi clip is about 98%
+  bass (below 200 Hz) and mono. These are rough proxies, not a quality score.
+  Likely causes in the current setup, none yet tested one at a time:
+  - ACE-Step runs its fast *turbo* model (8 steps, no guidance). Its docs describe the
+    slower SFT model (about 50 steps, with guidance) as having richer detail.
+  - ACE-Step's language model, which plans the song and improves prompt following,
+    does not fit in 4 GB, so it is off.
+  - Low-memory mode uses INT8 weights and emulated bfloat16 on older GPUs.
+  - Prompts are reduced to generic keyword lists by the parser; more specific
+    descriptions (instruments, production style) would likely help.
+  - ACE-Step's larger XL models need at least 12 GB of VRAM.
+- Tempo requests were mostly followed (lofi measured 85 bpm as asked; jazz asked for
+  70 was ambiguous), and 45 s tracks include fade-ins/outs and quiet gaps.
 - MusicGen-small is a small model. Genre mixes (for example hip hop + punk) may
   come out as generic rock with a beat rather than a real fusion.
 - Instrumental only. MusicGen cannot sing, so `--lyrics` has no effect on it.
@@ -226,14 +242,17 @@ on the test GPU (see [Limitations](#limitations)).
 Planned in rough priority order. None of this is done yet. (ACE-Step was
 chosen over YuE, DiffRhythm and Stable Audio 3.0, which need more VRAM than a 4 GB card.)
 
-1. **Longer and steadier ACE-Step tracks:** test lengths up to the 10-minute cap,
+1. **Audio quality experiments:** A/B listening tests of richer prompts and the
+   ACE-Step SFT model (more steps, guidance) against the current turbo setup,
+   to find what actually improves the sound on a 4 GB card.
+2. **Longer and steadier ACE-Step tracks:** test lengths up to the 10-minute cap,
    speed up long generations on 4 GB cards, and explore ways to keep calm prompts
    calm (loudness control).
-2. **Vocals and lyrics** with ACE-Step (supported by the model, not yet tested here).
-3. **Progress and ETA, plus resume after a crash** for long generations.
-4. **Web UI** (Gradio).
-5. **Better prompt understanding** (more genres, instruments and moods; tested LLM mode).
-6. **CI and a GPU Docker image.**
+3. **Vocals and lyrics** with ACE-Step (supported by the model, not yet tested here).
+4. **Progress and ETA, plus resume after a crash** for long generations.
+5. **Web UI** (Gradio).
+6. **Better prompt understanding** (more genres, instruments and moods; tested LLM mode).
+7. **CI and a GPU Docker image.**
 
 YuE, DiffRhythm and Stable Audio 3.0 were considered but need more VRAM than a 4 GB card.
 
