@@ -1,5 +1,9 @@
 # aimusic
 
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
+![Status: early stage](https://img.shields.io/badge/status-early%20stage-orange)
+
 Describe music in plain English; get an audio file. Runs locally with open-source models.
 
 ```
@@ -14,7 +18,9 @@ plus a `.json` file with every setting used.
 > clips) and ACE-Step (continuous tracks up to 5 minutes verified on a 4 GB
 > GPU). Read [Limitations](#limitations) before relying on it.
 
-**Hear examples** (made with ACE-Step): [calm + rain, 2 min](examples/acestep-calm-study-rain-2min.mp3) ·
+**[▶ Listen in your browser (demo page)](https://himanshugupta2312.github.io/ai-music-generator/)** with
+playable audio and copy-paste commands. Or jump straight to a file (GitHub shows a download or play
+page for MP3s). Made with ACE-Step: [calm + rain, 2 min](examples/acestep-calm-study-rain-2min.mp3) ·
 [punk rock](examples/acestep-punk-rock.mp3) · [lofi beats](examples/acestep-lofi-beats.mp3) ·
 [cinematic](examples/acestep-cinematic.mp3) · [jazz](examples/acestep-jazz.mp3) ·
 [hip hop + punk at 450 Hz](examples/acestep-hiphop-punk-450hz.mp3)
@@ -50,13 +56,16 @@ ambience and tuning, then shows you the result before generating.
 | `aimusic "45 sec mellow jazz with soft piano, 70 bpm" --seed 4` | jazz, soft piano, brushed drums, 70 bpm | [acestep-jazz.mp3](examples/acestep-jazz.mp3) |
 | `aimusic "45 sec soundtrack with hip hop beats and punk music at 450hz" --seed 11` | hip hop + punk, **tuned to A = 450 Hz** (pitch-shifted afterwards) | [acestep-hiphop-punk-450hz.mp3](examples/acestep-hiphop-punk-450hz.mp3) |
 
-**MusicGen** (20 s clips, 32 kHz mono; add `--backend musicgen`):
+<details>
+<summary><strong>MusicGen examples</strong> (20 s clips, 32 kHz mono; add <code>--backend musicgen</code>)</summary>
 
 | You type | It understands | Listen |
 |---|---|---|
 | `aimusic "20 sec calm soothing piano music with rain for studying" --seed 3` | 20 s, calm piano, rain layer | [calm-study-rain.mp3](examples/calm-study-rain.mp3) |
 | `aimusic "20 sec punk rock with distorted guitars and fast drums" --seed 5` | 20 s, punk rock | [punk-rock.mp3](examples/punk-rock.mp3) |
 | `aimusic "20 sec lofi hip hop beats, mellow, 85 bpm" --seed 8` | 20 s, lo-fi hip hop, 85 bpm | [lofi-beats.mp3](examples/lofi-beats.mp3) |
+
+</details>
 
 Each example has a `.json` next to it in [`examples/`](examples/) with the exact
 settings and seed, so you can reproduce it.
@@ -69,16 +78,30 @@ settings and seed, so you can reproduce it.
 > any commercial use. The 450 Hz example is 44 s because the retune shortens the
 > audio by about 2%.
 
-More things you can say:
+## Prompt cookbook
+
+Copy a line (GitHub shows a copy button on each code block), paste it, and change the words.
+
+| I want... | Try this |
+|---|---|
+| Background music for studying | `aimusic "4 min soothing piano and ambient music for studying" --backend acestep -y` |
+| ...with rain | `aimusic "2 min calm piano with rain for studying" --backend acestep -y` |
+| A steady beat at a set tempo | `aimusic "1 min lofi hip hop beats, 85 bpm" --backend acestep -y` |
+| High energy | `aimusic "45 sec punk rock with distorted guitars and fast drums" --backend acestep -y` |
+| A film-style feel | `aimusic "45 sec epic cinematic music" --backend acestep -y` |
+| A different tuning | `aimusic "soundtrack with hip hop beats and punk at 450hz" --backend acestep -y` |
+| The same result again | add `--seed 42` (use the same seed and the same prompt) |
+| A different take | change `--seed` (any number) |
+| MP3 instead of WAV | add `--out song.mp3` (needs ffmpeg) |
+| To check my setup | `aimusic doctor` |
+
+<details>
+<summary><strong>More ideas and which words the tool recognises</strong></summary>
 
 ```
-aimusic "2 min mellow jazz, 70 bpm"                       # duration + tempo
-aimusic "sleep music with wind, 1 hour"                    # wind layer (see limits for long tracks)
-aimusic "soundtrack with hip hop beats and punk music at 450hz"   # tuning: A = 450 Hz
-aimusic "epic cinematic trailer" --lyrics words.txt        # your own lyrics (backend support varies)
-aimusic "rainy night jazz" --llm llama3.2                  # let a local Ollama model write the style prompt
-aimusic "happy upbeat tune" --seed 42 --out tune.mp3       # reproducible, MP3 output
-aimusic doctor                                             # check your setup
+aimusic "sleep music with wind, 1 hour"                    # wind layer (1 hour is over the 10-minute cap, so use 10 min)
+aimusic "epic cinematic trailer" --lyrics words.txt        # your own lyrics (backend support varies; not tested)
+aimusic "rainy night jazz" --llm llama3.2                  # let a local Ollama model write the style prompt (untested)
 ```
 
 Recognised keywords include: calm, soothing, relax, sleep, study, focus, lofi,
@@ -86,10 +109,26 @@ forest, cinematic, epic, dark, happy, sad, jazz, piano, guitar, acoustic, punk,
 hip hop, trap; plus rain and wind ambience. Anything else is passed through
 as plain text, which the model may or may not understand.
 
+Tips: say the length ("45 sec", "2 min", up to 10 min), the genre, and one or two
+instruments. The tool shows how it read your prompt before generating, so check
+that list and rephrase if something is missing.
+
+</details>
+
 ## How it works
 
-```
-prompt -> parser -> settings -> backend -> ambience mix -> retune -> audio + .json
+```mermaid
+flowchart LR
+    A["Your prompt<br/>'4 min calm piano with rain'"] --> B["Parser<br/>duration, mood, genre,<br/>rain/wind, tuning"]
+    B --> C{"Backend"}
+    C -->|"synth"| D1["CPU synth<br/>(no model)"]
+    C -->|"musicgen"| D2["MusicGen<br/>30 s clips"]
+    C -->|"acestep"| D3["ACE-Step<br/>one continuous piece"]
+    D1 --> E["Ambience mix<br/>rain / wind"]
+    D2 --> E
+    D3 --> E
+    E --> F["Retune<br/>(optional A = N Hz)"]
+    F --> G["audio file + settings .json"]
 ```
 
 - **Parser** (rule-based): extracts duration ("4 min"), tempo ("120 bpm"), mood
@@ -147,12 +186,13 @@ Low-memory mode is used automatically: no language model, INT8 weights and CPU o
 series), `aimusic` forces bfloat16, because the default float16 produced NaN errors
 on the test GPU (see [Limitations](#limitations)).
 
-### Flags
+<details>
+<summary><strong>All command-line flags</strong></summary>
 
 | Flag | Meaning |
 |---|---|
 | `--backend` | `synth` (default), `musicgen`, `acestep` |
-| `--duration` | seconds; overrides the prompt |
+| `--duration` | seconds; overrides the prompt (maximum 600) |
 | `--seed` | reproducible results |
 | `--tuning HZ` | concert A in Hz (default 440), applied after generation |
 | `--lyrics FILE` | lyrics with `[verse]` / `[chorus]` tags |
@@ -161,11 +201,13 @@ on the test GPU (see [Limitations](#limitations)).
 | `--out` | output file, `.wav` or `.mp3` |
 | `-y` | skip the confirmation prompt |
 
+</details>
+
 ## Status
 
 | Part | State |
 |---|---|
-| Plain-English parser | working, rule-based; 7 unit tests pass |
+| Plain-English parser | working, rule-based; 8 unit tests pass |
 | `synth` backend (CPU, no model) | working; basic ambient pads, for testing and no-GPU use |
 | `musicgen` backend | working. Tested on Windows 11, Quadro T2000 (4 GB), torch 2.14.1+cu126, transformers 5.22.2 |
 | MP3 export | working (the three example files) |
