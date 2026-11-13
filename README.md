@@ -18,6 +18,10 @@ plus a `.json` file with every setting used.
 > clips) and ACE-Step (continuous tracks up to 5 minutes verified on a 4 GB
 > GPU). Read [Limitations](#limitations) before relying on it.
 
+<p align="center">
+  <a href="#web-ui-3d"><img src="docs/screenshots/ui-idle.jpg" alt="The aimusic web UI: a dark page with eight colourful vibe cards, a prompt box, and a glowing 3D orb with a particle halo" width="860"></a>
+</p>
+
 **[▶ Listen in your browser (demo page)](https://himanshugupta2312.github.io/ai-music-generator/)** with
 playable audio and copy-paste commands. Or jump straight to a file (GitHub shows a download or play
 page for MP3s). Made with ACE-Step: [calm + rain, 2 min](examples/acestep-calm-study-rain-2min.mp3) ·
@@ -52,7 +56,21 @@ It opens in your browser at `http://127.0.0.1:7860` and only listens on your own
 machine. Use `aimusic ui --no-browser` if you don't want a tab opened for you, or
 `--port 7861` to change the port.
 
-![The aimusic 3D web UI while a track is being made (software-rendered screenshot, quick synth backend)](docs/ui-screenshot.png)
+### Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><a href="docs/screenshots/ui-idle.jpg"><img src="docs/screenshots/ui-idle.jpg" alt="Idle: vibe cards, prompt box and the 3D orb in violet and pink"></a><br><sub><b>1. Pick a vibe.</b> Eight tilting vibe cards, a prompt box, and the 3D scene idling.</sub></td>
+    <td width="50%"><a href="docs/screenshots/ui-generating.jpg"><img src="docs/screenshots/ui-generating.jpg" alt="Generating: the scene turns blue for the Study vibe and a progress ring shows the elapsed time on the orb"></a><br><sub><b>2. Making music.</b> The scene takes the vibe's colours; a progress ring shows elapsed time and a rough estimate; Stop stays live.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="docs/screenshots/ui-playing.jpg"><img src="docs/screenshots/ui-playing.jpg" alt="Playing: an orange orb reacting to the music, with a player, download button and session history"></a><br><sub><b>3. Playing.</b> The orb and particles react to the beats. Player, download, and a session history on the right.</sub></td>
+    <td width="50%" align="center"><a href="docs/screenshots/ui-phone.jpg"><img src="docs/screenshots/ui-phone.jpg" alt="Phone-width layout, vibe cards in two columns" width="150"></a> <a href="docs/screenshots/ui-phone-player.jpg"><img src="docs/screenshots/ui-phone-player.jpg" alt="Phone-width layout, player and history" width="150"></a><br><sub><b>4. Phone width (390 px).</b> The layout stacks into one column.</sub></td>
+  </tr>
+</table>
+
+These were captured in headless Edge with **software** WebGL, using the quick synth backend
+so a track finishes in about a second. On a real GPU the animation should be smoother.
 
 What you get:
 
@@ -86,7 +104,7 @@ One track is generated at a time. Files are saved in an `output/` folder next to
 you started it. If WebGL is unavailable, the page falls back to a plain gradient
 background and everything else still works. It was checked in headless Edge with
 software WebGL (idle, vibe click, generate, play, another take, Surprise me, Stop, and a
-phone-sized 390 px viewport with no horizontal overflow), with no JavaScript errors. I
+390 px phone-width viewport, measured with a track loaded: nothing wider than the screen), with no JavaScript errors. I
 have not tried other browsers or a real GPU-accelerated run, and the software renderer
 is slower than real hardware, so animation smoothness is unverified.
 
@@ -258,7 +276,7 @@ on the test GPU (see [Limitations](#limitations)).
 
 | Part | State |
 |---|---|
-| Plain-English parser | working, rule-based; covered by the automated tests (34 in total across the project) |
+| Plain-English parser | working, rule-based; covered by the automated tests (35 in total across the project) |
 | `synth` backend (CPU, no model) | working; genre-aware procedural music (ambient/sleep, lofi, hip hop, trap, jazz, punk, cinematic, punk + hip hop mash-up) with drums, bass and chords. Toy-synth sound, not a trained model. 30 s renders in under a second, 10 min in about 13 s. Listening quality not judged by ear. |
 | `musicgen` backend | working. Tested on Windows 11, Quadro T2000 (4 GB), torch 2.14.1+cu126, transformers 5.22.2 |
 | MP3 export | working (the three example files) |

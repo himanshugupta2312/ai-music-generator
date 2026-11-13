@@ -30,6 +30,9 @@ a { color: inherit; }
 .chips li { background: rgba(255,255,255,.08); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; font-size: .85rem; }
 
 /* layout */
+/* let grid/flex children shrink below their content (a long track title must not widen the page) */
+.layout > *, .left, .right, .stage, .glass, .player, .controls > *, .promptrow > * { min-width: 0; }
+.title, .history button { max-width: 100%; overflow-wrap: anywhere; }
 .layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 22px; align-items: start; }
 @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
 h2 { font-size: 1rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; font-weight: 700; }

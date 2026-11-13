@@ -135,6 +135,9 @@ class JobManager:
         """Validate and start a job. Raises ValueError (bad input) or Busy."""
         with self._lock:
             if self.current is not None and self.current.alive():
+                if self.current.cancel_requested:
+                    raise Busy("The stopped track is still winding down (only ACE-Step can be "
+                               "interrupted instantly). Try again in a few seconds.")
                 raise Busy("Another track is still being made. Stop it or wait for it to finish.")
             if not prompt or not prompt.strip():
                 raise ValueError("Pick a vibe or describe the music first.")

@@ -171,3 +171,25 @@ def test_vibes_and_surprise_prompts_are_valid():
     assert len(set(prompts)) > 20
     assert all(v["emoji"] and v["name"] and v["c1"].startswith("#") and v["c2"].startswith("#") for v in VIBES)
     assert len({v["id"] for v in VIBES}) == len(VIBES)
+
+
+def test_stopped_job_that_cannot_be_interrupted_gives_a_clear_busy_message(server, monkeypatch):
+    release = threading.Event()
+
+    class Stubborn(Backend):            # ignores cancel(), like the synth and MusicGen
+        name, sample_rate = "stubborn", 8000
+
+        def generate(self, s):
+            release.wait(10)
+            return np.zeros((8000, 1), dtype=np.float32)
+
+    monkeypatch.setattr(jobs, "get_backend", lambda name: Stubborn())
+    _, first = jcall(server, "POST", "/api/generate", {"prompt": "calm piano", "backend": "synth", "duration": 5})
+    jcall(server, "POST", f"/api/jobs/{first['job']}/cancel", {})
+    status, err = jcall(server, "POST", "/api/generate", {"prompt": "calm piano", "backend": "synth", "duration": 5})
+    assert status == 409 and "winding down" in err["error"]
+    release.set()
+    deadline = time.time() + 10
+    while server.manager.current.alive() and time.time() < deadline:
+        time.sleep(0.05)
+    assert jcall(server, "POST", "/api/generate", {"prompt": "calm piano", "backend": "synth", "duration": 5})[0] == 202
